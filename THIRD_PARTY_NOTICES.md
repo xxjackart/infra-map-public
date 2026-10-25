@@ -15,7 +15,7 @@ License: [CC0 1.0 Universal](https://raw.githubusercontent.com/simple-icons/simp
 | `opencode.svg` | https://raw.githubusercontent.com/simple-icons/simple-icons/16.35.0/icons/opencode.svg |
 | `home-assistant.svg` | https://raw.githubusercontent.com/simple-icons/simple-icons/16.35.0/icons/homeassistant.svg |
 | `tailscale.svg` | https://raw.githubusercontent.com/simple-icons/simple-icons/16.35.0/icons/tailscale.svg |
-| `caddy.svg` | https://raw.githubusercontent.com/simple-icons/simple-icons/16.35.0/icons/caddy.svg |
+| `caddy-gateway.svg` | https://raw.githubusercontent.com/simple-icons/simple-icons/16.35.0/icons/caddy.svg |
 | `grafana.svg` | https://raw.githubusercontent.com/simple-icons/simple-icons/16.35.0/icons/grafana.svg |
 
 Product names and marks belong to their respective owners. CC0 does not grant trademark rights.
