@@ -67,6 +67,15 @@ No installation or third-party packages are required. Chrome is located through 
 - [x] Final independent release review
 - [x] Local scoped commit
 - [x] Previous public repository changed to private
-- [ ] New public repository created from a fresh archive with exactly one commit
-- [ ] GitHub Pages configured for `main /docs`
-- [ ] Public URL, social image and `/model/infra.c4` = 404 verified
+- [x] New public repository created from a fresh archive with exactly one commit
+- [x] GitHub Pages configured for `main /docs`
+- [x] Public URL, social image and `/model/infra.c4` = 404 verified
+
+## Public verification
+
+- Initial clean commit: `99c6ef6`, created from a fresh archive with no development history
+- Public URL: https://xxjackart.github.io/infra-map-public/ returns 200 with the System Metro title
+- Social preview and QA links return 200
+- `/model/infra.c4` returns 404; previous public URL returns 404
+- Public browser smoke: 16 stations, all 8 brand icons loaded, station selection works, no external resources, no console errors
+- CDN-specific `caddy.svg` failure was resolved by renaming the asset to `caddy-gateway.svg`; commit `73d75bf`
