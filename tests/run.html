@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>infra-map regression runner</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #fff; color: #111; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+  #runner-output { margin: 0; padding: 14px; white-space: pre-wrap; }
+  #stage { position: absolute; left: -2200px; top: 0; }
+</style>
+</head>
+<body data-runner-status="running">
+<pre id="runner-output" data-status="running">starting</pre>
+<div id="stage"></div>
+<script>
+"use strict";
+(() => {
+  const ORIGIN = location.origin;
+  const out = document.getElementById("runner-output");
+  const stage = document.getElementById("stage");
+  const lines = [];
+  let checksRun = 0;
+  let failures = 0;
+  let finished = false;
+
+  const ALL_STATIONS = [
+    "sources", "n8n", "openwebui", "qdrant", "records",
+    "human", "opencode", "mcp", "decisions", "outcomes",
+    "network", "caddy", "infisical", "recovery", "observability", "models"
+  ];
+  const LINES = {
+    data: ["sources", "n8n", "openwebui", "qdrant", "records"],
+    agency: ["human", "opencode", "mcp", "decisions", "outcomes"],
+    trust: ["network", "caddy", "infisical", "recovery", "observability"],
+    external: ["models"]
+  };
+  const TITLES = {
+    sources: "Sources", n8n: "n8n", openwebui: "OpenWebUI", qdrant: "Qdrant",
+    records: "Records", human: "Human", opencode: "Open Code", mcp: "MCP",
+    decisions: "Decisions", outcomes: "Outcomes", network: "Network",
+    caddy: "Caddy", infisical: "Infisical", recovery: "Recovery",
+    observability: "Observability", models: "Model APIs"
+  };
+  const DEFAULT_META = ["16 stations", "3 lines", "1 external boundary"];
+
+  function assert(condition, message) {
+    if (!condition) throw new Error(message);
+  }
+  function assertEqual(actual, expected, message) {
+    if (actual !== expected) {
+      throw new Error(`${message}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    }
+  }
+  function assertDeep(actual, expected, message) {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) throw new Error(`${message}: expected ${e}, got ${a}`);
+  }
+  function assertNear(actual, expected, tolerance, message) {
+    if (!(Math.abs(actual - expected) <= tolerance)) {
+      throw new Error(`${message}: expected ${expected} +/- ${tolerance}, got ${actual}`);
+    }
+  }
+
+  function finish() {
+    if (finished) return;
+    finished = true;
+    const status = failures === 0 ? "passed" : "failed";
+    out.dataset.status = status;
+    document.body.dataset.runnerStatus = status;
+    document.documentElement.dataset.runnerStatus = status;
+    out.textContent = [
+      `status=${status} checks=${checksRun} failures=${failures}`,
+      ...lines
+    ].join("\n");
+    document.title = `infra-map ${status}`;
+  }
+
+  async function check(name, fn) {
+    checksRun += 1;
+    try {
+      await fn();
+      lines.push(`[PASS] ${name}`);
+      return true;
+    } catch (error) {
+      failures += 1;
+      const detail = error && error.message ? error.message : String(error);
+      lines.push(`[FAIL] ${name} :: ${detail}`);
+      return false;
+    }
+  }
+
+  // One macrotask is enough: all product handlers mutate the DOM synchronously.
+  // rAF is avoided because headless virtual time may not produce frames without animation.
+  function nextTask() {
+    return new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  function parseColor(value) {
+    const match = value.match(/rgba?\(([^)]+)\)/);
+    if (!match) throw new Error(`Unsupported color: ${value}`);
+    const parts = match[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
+    return { rgb: parts.slice(0, 3), alpha: parts.length > 3 ? parts[3] : 1 };
+  }
+
+  function composite(foreground, alpha, background) {
+    return foreground.map((channel, index) => channel * alpha + background[index] * (1 - alpha));
+  }
+
+  function relativeLuminance(rgb) {
+    const [r, g, b] = rgb.map(channel => {
+      const value = channel / 255;
+      return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function contrastRatio(foreground, background) {
+    const a = relativeLuminance(foreground);
+    const b = relativeLuminance(background);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  }
+
+  function loadFrame(path, width, height) {
+    return new Promise((resolve, reject) => {
+      const frame = document.createElement("iframe");
+      frame.width = String(width);
+      frame.height = String(height);
+      frame.style.width = `${width}px`;
+      frame.style.height = `${height}px`;
+      frame.style.border = "0";
+      frame.setAttribute("title", `infra-map test frame ${path}`);
+      const timer = setTimeout(() => {
+        frame.remove();
+        reject(new Error(`timeout loading ${path}`));
+      }, 10000);
+      frame.addEventListener("load", () => {
+        let doc;
+        try {
+          doc = frame.contentDocument;
+        } catch (error) {
+          return;
+        }
+        // Ignore the initial about:blank load; wait for the real document.
+        if (!doc || doc.readyState !== "complete" || !doc.querySelector(".station")) return;
+        clearTimeout(timer);
+        // Remove transition timing from the equation so computed opacity is final.
+        const style = doc.createElement("style");
+        style.textContent = "*,*::before,*::after{transition:none!important;animation:none!important}";
+        doc.head.appendChild(style);
+        resolve(frame);
+      });
+      frame.src = new URL(path, location.href).href;
+      stage.appendChild(frame);
+    });
+  }
+
+  async function withFrame(label, path, width, height, fn) {
+    let frame = null;
+    const loaded = await check(`${label}: product iframe loads from repo root`, async () => {
+      frame = await loadFrame(path, width, height);
+      assert(frame.contentWindow, "iframe has no contentWindow");
+      const doc = frame.contentDocument;
+      assertEqual(doc.querySelectorAll(".station").length, 16, "iframe did not render 16 stations");
+      assertEqual(frame.contentWindow.location.pathname, "/docs/index.html", "iframe must load /docs/index.html");
+      assertEqual(frame.contentWindow.location.origin, ORIGIN, "iframe must be same-origin");
+    });
+    if (!loaded || !frame) return;
+    try {
+      await fn(frame);
+    } finally {
+      frame.remove();
+    }
+  }
+
+  const $ = (frame, selector) => frame.contentDocument.querySelector(selector);
+  const $$ = (frame, selector) => Array.from(frame.contentDocument.querySelectorAll(selector));
+  const text = element => (element ? element.textContent.trim() : null);
+  const station = (frame, id) => {
+    const element = $(frame, `.station[data-station="${id}"]`);
+    assert(element, `missing station ${id}`);
+    return element;
+  };
+  const chips = frame => $$(frame, "#detail-tools span").map(text);
+  const statusText = frame => text($(frame, "#line-status"));
+  const selected = frame => $$(frame, ".station.is-selected").map(element => element.dataset.station);
+  const opacity = (frame, id) => Number(frame.contentWindow.getComputedStyle(station(frame, id)).opacity);
+
+  function assertDefaultState(frame, context) {
+    assertEqual(text($(frame, "#detail-title")), "Choose a station.", `${context}: default detail title`);
+    assertEqual(text($(frame, "#detail-kicker")), "Interactive map guide", `${context}: default kicker`);
+    assertEqual(statusText(frame), "All lines / select a station", `${context}: default status`);
+    assertDeep(chips(frame), DEFAULT_META, `${context}: default meta chips`);
+    assertEqual($(frame, "#detail-prev").disabled, true, `${context}: Previous must be disabled`);
+    assertEqual($(frame, "#detail-next").disabled, true, `${context}: Next must be disabled`);
+    assertEqual($(frame, "#atlas-reset").disabled, true, `${context}: Reset must be disabled`);
+    assertEqual($$(frame, ".station.is-selected").length, 0, `${context}: no station may be selected`);
+    assertEqual($$(frame, ".station[aria-pressed='true']").length, 0, `${context}: aria-pressed must all be false`);
+    assertEqual($(frame, "#atlas").classList.contains("has-focus"), false, `${context}: focus class must be absent`);
+    assertEqual($$(frame, ".metro-line.is-active, .metro-external.is-active").length, 0,
+      `${context}: no metro path may be active`);
+  }
+
+  function assertDetail(frame, id, options = {}) {
+    const line = options.line;
+    const kicker = options.kicker;
+    const tools = options.tools;
+    assertDeep(selected(frame), [id], "selected station");
+    assertEqual($(frame, `[data-station="${id}"]`).getAttribute("aria-pressed"), "true",
+      `${id}: aria-pressed must be true`);
+    assertEqual(text($(frame, "#detail-title")), TITLES[id], `${id}: detail title`);
+    if (kicker) assertEqual(text($(frame, "#detail-kicker")), kicker, `${id}: detail kicker`);
+    if (tools) assertDeep(chips(frame), tools, `${id}: detail tools`);
+    assertEqual(text($(frame, "#line-status")), options.status, `${id}: status line`);
+    assertEqual(frame.contentWindow.location.hash, `#map-${id}`, `${id}: deep-link hash`);
+    assertEqual($(frame, "#atlas").classList.contains("has-focus"), true, `${id}: focus class`);
+    assertEqual($(frame, "#detail-prev").disabled, false, `${id}: Previous enabled`);
+    assertEqual($(frame, "#detail-next").disabled, false, `${id}: Next enabled`);
+    assertEqual($(frame, "#atlas-reset").disabled, false, `${id}: Reset enabled`);
+    assertEqual(text($(frame, "#detail-prev")), options.prev, `${id}: Previous label`);
+    assertEqual(text($(frame, "#detail-next")), options.next, `${id}: Next label`);
+    assertEqual($(frame, "[data-station='" + id + "']").classList.contains("is-selected"), true,
+      `${id}: is-selected class`);
+    assertEqual($(frame, "[data-station='" + id + "']").classList.contains("is-active-line"), true,
+      `${id}: is-active-line class`);
+    assertEqual($$(frame, `.station.is-active-line[data-line="${line}"]`).length, LINES[line].length,
+      `${id}: every ${line} station stays active`);
+    assertEqual($$(frame, ".station.is-active-line").length, LINES[line].length,
+      `${id}: no other line stays active`);
+    const icon = $(frame, "#detail-icon img");
+    if (options.icon) {
+      assert(icon, `${id}: detail icon image missing`);
+      assert(icon.getAttribute("src").endsWith(options.icon), `${id}: detail icon mismatch: ${icon.getAttribute("src")}`);
+    }
+    assert(opacity(frame, id) >= 0.99, `${id}: selected station must be fully opaque`);
+  }
+
+  async function desktopChecks(frame) {
+    await check("desktop: 16 stations in documented order with titles", async () => {
+      const domOrder = $$(frame, ".station").map(element => element.dataset.station);
+      assertDeep(domOrder, ALL_STATIONS, "station DOM order");
+      for (const [id, title] of Object.entries(TITLES)) {
+        assertEqual(text($(frame, `[data-station="${id}"] strong`)), title, `${id}: visible title`);
+      }
+      for (const [line, ids] of Object.entries(LINES)) {
+        for (const id of ids) {
+          assertEqual(station(frame, id).dataset.line, line, `${id}: line`);
+        }
+      }
+      assertEqual($$(frame, ".station").length, 16, "station count");
+      assertEqual(frame.contentWindow.InfraMap.createOrder($$(frame, ".station")).length, 16,
+        "InfraMap.createOrder must see all 16 stations");
+    });
+
+    await check("desktop: initial default state and 3-line metadata", async () => {
+      assertDefaultState(frame, "initial");
+      assertEqual(frame.contentWindow.location.hash, "", "fresh load must have no hash");
+      assertEqual(frame.contentDocument.querySelectorAll(".station").length, 16, "16 stations");
+    });
+
+    await check("desktop: all eight brand icons decoded, eight monograms present", async () => {
+      const images = $$(frame, ".station .station-token img");
+      assertEqual(images.length, 8, "brand icon count");
+      for (const image of images) {
+        assert(image.complete, `icon not complete: ${image.getAttribute("src")}`);
+        assert(image.naturalWidth > 0, `icon failed to load: ${image.getAttribute("src")}`);
+      }
+      assertEqual($$(frame, ".station .station-token .monogram").length, 8, "monogram count");
+    });
+
+    await check("desktop: no external runtime resources", async () => {
+      const entries = frame.contentWindow.performance.getEntriesByType("resource").map(entry => entry.name);
+      assert(entries.length >= 9, `expected at least 9 local resources (map.js + 8 icons), got ${entries.length}`);
+      const external = entries.filter(name => {
+        try {
+          return new URL(name).origin !== ORIGIN;
+        } catch (error) {
+          return true;
+        }
+      });
+      assertEqual(external.length, 0, `external resources: ${external.join(", ")}`);
+      const remoteAttrs = $$(frame, "img, script, link, iframe, source").filter(element => {
+        const tag = element.tagName.toLowerCase();
+        if (tag === "link") {
+          const rels = (element.getAttribute("rel") || "").split(/\s+/);
+          const fetched = ["stylesheet", "icon", "preload", "modulepreload", "prefetch"];
+          if (!rels.some(rel => fetched.includes(rel))) return false;
+        }
+        const value = element.getAttribute("src") || element.getAttribute("href") || "";
+        return /^(https?:)?\/\//.test(value);
+      });
+      assertEqual(remoteAttrs.length, 0, `remote resource attributes: ${remoteAttrs.map(element => element.outerHTML).join(" ")}`);
+    });
+
+    await check("desktop: every station box fits the 1200x640 canvas", async () => {
+      const canvas = $(frame, ".atlas-canvas").getBoundingClientRect();
+      assertNear(canvas.width, 1200, 0.5, "canvas width");
+      assertNear(canvas.height, 640, 0.5, "canvas height");
+      for (const element of $$(frame, ".station")) {
+        const box = element.getBoundingClientRect();
+        const id = element.dataset.station;
+        assert(box.left - canvas.left >= -0.5, `${id}: left edge escapes canvas (${box.left - canvas.left})`);
+        assert(box.right - canvas.left <= 1200.5, `${id}: right edge ${box.right - canvas.left} exceeds 1200`);
+        assert(box.top - canvas.top >= -0.5, `${id}: top edge escapes canvas (${box.top - canvas.top})`);
+        assert(box.bottom - canvas.top <= 640.5, `${id}: bottom edge ${box.bottom - canvas.top} exceeds 640`);
+      }
+    });
+
+    await check("desktop: no document overflow and pan hint hidden when canvas fits", async () => {
+      const doc = frame.contentDocument;
+      const de = doc.documentElement;
+      assert(de.scrollWidth <= de.clientWidth + 1,
+        `documentElement overflows: scrollWidth ${de.scrollWidth} > clientWidth ${de.clientWidth}`);
+      assert(doc.body.scrollWidth <= de.clientWidth + 1,
+        `body overflows: scrollWidth ${doc.body.scrollWidth} > clientWidth ${de.clientWidth}`);
+      const hint = $(frame, ".map-pan-hint");
+      assertEqual(frame.contentWindow.getComputedStyle(hint).display, "none",
+        "pan hint must be hidden when scrollWidth <= clientWidth");
+    });
+
+    await check("desktop: click n8n selects DATA 2/5 with tools and neighbours", async () => {
+      station(frame, "n8n").click();
+      await nextTask();
+      assertDetail(frame, "n8n", {
+        line: "data",
+        kicker: "DATA / Workflows and ETL",
+        tools: ["n8n", "ETL", "Routing", "Idempotency"],
+        status: "DATA \u00b7 n8n \u00b7 2/5",
+        prev: "\u2190 Sources",
+        next: "OpenWebUI \u2192",
+        icon: "icons/n8n.svg"
+      });
+      assert(text($(frame, "#detail-description")).includes("Open Code controls selected workflows through MCP"),
+        "n8n description text changed");
+      assertEqual($$(frame, ".metro-line.is-active").length, 1, "exactly one metro line active");
+      assert($(frame, ".metro-line.is-active").classList.contains("line-data"), "DATA line must be active");
+      assertEqual($$(frame, ".metro-external.is-active").length, 0, "external path must stay inactive");
+    });
+
+    await check("desktop: dimmed stations stay >= 0.55 and active line is 1", async () => {
+      assertNear(opacity(frame, "human"), 0.55, 0.001, "dimmed agency station opacity");
+      assertNear(opacity(frame, "network"), 0.55, 0.001, "dimmed trust station opacity");
+      assert(opacity(frame, "human") >= 0.55, "dimmed opacity must be at least 0.55");
+      assert(opacity(frame, "openwebui") >= 0.99, "same-line station must be fully visible");
+    });
+
+    await check("desktop: dimmed strong and small meet WCAG AA 4.5:1", async () => {
+      const win = frame.contentWindow;
+      const canvasBackground = parseColor(win.getComputedStyle($(frame, ".atlas-canvas")).backgroundColor);
+      const dimmed = $$(frame, ".station").filter(element => Number(win.getComputedStyle(element).opacity) < 0.99);
+      assertEqual(dimmed.length, 11, "expected 11 dimmed stations while DATA is focused");
+      const failures = [];
+      let minimum = Infinity;
+      for (const element of dimmed) {
+        const style = win.getComputedStyle(element);
+        const opacity = Number(style.opacity);
+        assert(opacity >= 0.55, `${element.dataset.station}: opacity dropped below 0.55`);
+        const stationBackground = parseColor(style.backgroundColor);
+        const backgroundInside = composite(stationBackground.rgb, stationBackground.alpha, canvasBackground.rgb);
+        const backgroundRendered = composite(backgroundInside, opacity, canvasBackground.rgb);
+        const colors = {};
+        for (const selector of ["strong", "small"]) {
+          const node = element.querySelector(selector);
+          assert(node, `${element.dataset.station}: missing ${selector}`);
+          const color = parseColor(win.getComputedStyle(node).color);
+          colors[selector] = win.getComputedStyle(node).color;
+          const textInside = composite(color.rgb, color.alpha, backgroundInside);
+          const textRendered = composite(textInside, opacity, canvasBackground.rgb);
+          const ratio = contrastRatio(textRendered, backgroundRendered);
+          minimum = Math.min(minimum, ratio);
+          if (ratio < 4.5) {
+            failures.push(`${element.dataset.station}/${selector}=${ratio.toFixed(2)}`);
+          }
+        }
+        assertEqual(colors.small, colors.strong,
+          `${element.dataset.station}: dimmed small must use the strong text color token`);
+      }
+      assertEqual(failures.length, 0, `WCAG 4.5:1 failures: ${failures.join(", ")}`);
+      assert(minimum >= 4.5, `minimum dimmed contrast ${minimum.toFixed(2)} is below 4.5`);
+      lines.push(`[INFO] minimum dimmed contrast: ${minimum.toFixed(2)}:1`);
+    });
+
+    await check("desktop: Next moves to OpenWebUI, Previous returns to n8n", async () => {
+      $(frame, "#detail-next").click();
+      await nextTask();
+      assertDetail(frame, "openwebui", {
+        line: "data",
+        kicker: "DATA / Knowledge workspace",
+        tools: ["OpenWebUI", "RAG", "Collections", "Retrieval"],
+        status: "DATA \u00b7 OpenWebUI \u00b7 3/5",
+        prev: "\u2190 n8n",
+        next: "Qdrant \u2192"
+      });
+      $(frame, "#detail-prev").click();
+      await nextTask();
+      assertDetail(frame, "n8n", {
+        line: "data",
+        kicker: "DATA / Workflows and ETL",
+        tools: ["n8n", "ETL", "Routing", "Idempotency"],
+        status: "DATA \u00b7 n8n \u00b7 2/5",
+        prev: "\u2190 Sources",
+        next: "OpenWebUI \u2192"
+      });
+    });
+
+    await check("desktop: external station reports 1/1 and activates only the external path", async () => {
+      station(frame, "models").click();
+      await nextTask();
+      assertDetail(frame, "models", {
+        line: "external",
+        kicker: "EXTERNAL / Explicit locality exception",
+        tools: ["Model APIs", "Document embeddings", "Data classification"],
+        status: "EXTERNAL \u00b7 Model APIs \u00b7 1/1",
+        prev: "\u2190 Observability",
+        next: "Sources \u2192"
+      });
+      assertEqual($$(frame, ".metro-line.is-active").length, 0, "no numbered line may be active");
+      assertEqual($$(frame, ".metro-external.is-active").length, 1, "external path must be active");
+      assertNear(opacity(frame, "observability"), 0.55, 0.001, "dimmed trust station after external selection");
+    });
+
+    await check("desktop: Reset restores default state, hash and scroll", async () => {
+      $(frame, "#atlas-reset").click();
+      await nextTask();
+      assertDefaultState(frame, "after reset");
+      assertEqual(frame.contentWindow.location.hash, "#system", "reset hash");
+      assertEqual($(frame, "#atlas-viewport").scrollLeft, 0, "reset scrollLeft");
+      assertNear(opacity(frame, "human"), 1, 0.001, "station opacity after reset");
+    });
+
+  }
+
+  async function invalidHashChecks(hash) {
+    await withFrame(`invalid ${hash}`, `/docs/index.html${hash}`, 1200, 900, async frame => {
+      await check(`invalid ${hash}: falls back to default state without throwing`, async () => {
+        assertDefaultState(frame, `invalid ${hash}`);
+        assertEqual(frame.contentWindow.location.hash, hash, "hash must be left untouched");
+        assertEqual($(frame, "#atlas").classList.contains("has-focus"), false, "focus must stay off");
+      });
+    });
+  }
+
+  async function mobileChecks(frame) {
+    await check("mobile 390: pan hint visible and page does not overflow", async () => {
+      const doc = frame.contentDocument;
+      const de = doc.documentElement;
+      const hint = $(frame, ".map-pan-hint");
+      const style = frame.contentWindow.getComputedStyle(hint);
+      assertEqual(style.display, "block", "pan hint display at 390px");
+      assert(hint.getBoundingClientRect().width > 0, "pan hint must have width");
+      assertEqual(text(hint), "Scroll or swipe to explore", "pan hint text");
+      assert(de.scrollWidth <= de.clientWidth + 1,
+        `documentElement overflows at 390: ${de.scrollWidth} > ${de.clientWidth}`);
+      assert(doc.body.scrollWidth <= de.clientWidth + 1,
+        `body overflows at 390: ${doc.body.scrollWidth} > ${de.clientWidth}`);
+      assertEqual($(frame, ".atlas-canvas").getBoundingClientRect().width, 1200, "canvas stays 1200 wide");
+      const viewport = $(frame, "#atlas-viewport");
+      assert(viewport.clientWidth < 1200, "viewport must be narrower than the canvas");
+      const images = $$(frame, ".station .station-token img");
+      assertEqual(images.length, 8, "mobile icon count");
+      for (const image of images) assert(image.naturalWidth > 0, `mobile icon failed: ${image.getAttribute("src")}`);
+    });
+
+    await check("mobile 390: scroll to Observability, select TRUST 5/5, Reset restores scroll", async () => {
+      station(frame, "observability").click();
+      await nextTask();
+      assertDetail(frame, "observability", {
+        line: "trust",
+        kicker: "TRUST / Runtime and operational visibility",
+        tools: ["Grafana", "Prometheus", "Loki", "Uptime Kuma", "Docker"],
+        status: "TRUST \u00b7 Observability \u00b7 5/5",
+        prev: "\u2190 Recovery",
+        next: "Model APIs \u2192"
+      });
+      const viewport = $(frame, "#atlas-viewport");
+      const view = viewport.getBoundingClientRect();
+      const box = station(frame, "observability").getBoundingClientRect();
+      assert(viewport.scrollLeft > 0, `expected horizontal pan, scrollLeft=${viewport.scrollLeft}`);
+      assert(box.left >= view.left + 10, `selected station left ${box.left} vs viewport ${view.left}`);
+      assert(box.right <= view.right - 10, `selected station right ${box.right} vs viewport ${view.right}`);
+      const doc = frame.contentDocument;
+      assert(doc.documentElement.scrollWidth <= doc.documentElement.clientWidth + 1,
+        "document must not overflow after selection");
+
+      $(frame, "#atlas-reset").click();
+      await nextTask();
+      assertDefaultState(frame, "mobile reset");
+      assertEqual(viewport.scrollLeft, 0, "reset must return scrollLeft to 0");
+      assertEqual(frame.contentWindow.location.hash, "#system", "mobile reset hash");
+    });
+  }
+
+  async function narrowChecks(frame) {
+    await check("768: pan hint visible, no document overflow", async () => {
+      const doc = frame.contentDocument;
+      const de = doc.documentElement;
+      const hint = $(frame, ".map-pan-hint");
+      assertEqual(frame.contentWindow.getComputedStyle(hint).display, "block", "pan hint at 768px");
+      assert(hint.getBoundingClientRect().width > 0, "pan hint width at 768px");
+      assert(de.scrollWidth <= de.clientWidth + 1,
+        `documentElement overflows at 768: ${de.scrollWidth} > ${de.clientWidth}`);
+      assert($(frame, "#atlas-viewport").clientWidth < 1200, "viewport must scroll at 768px");
+    });
+  }
+
+  async function panHintAtWidth(frame, width) {
+    await check(`pan hint measured at ${width}px equals scrollWidth > clientWidth`, async () => {
+      const viewport = $(frame, "#atlas-viewport");
+      const hint = $(frame, ".map-pan-hint");
+      const overflow = viewport.scrollWidth > viewport.clientWidth;
+      const display = frame.contentWindow.getComputedStyle(hint).display;
+      assertEqual(display === "block", overflow,
+        `width ${width}: display=${display}, scrollWidth=${viewport.scrollWidth}, clientWidth=${viewport.clientWidth}`);
+      assertEqual(hint.style.display, overflow ? "block" : "none",
+        `width ${width}: updatePanHint must set the inline display explicitly`);
+      if (overflow) {
+        assert(hint.getBoundingClientRect().width > 0, `width ${width}: pan hint has no rendered width`);
+        assertEqual(text(hint), "Scroll or swipe to explore", `width ${width}: pan hint text`);
+      } else {
+        assertEqual(hint.getBoundingClientRect().width, 0, `width ${width}: hidden hint must not occupy space`);
+      }
+      const doc = frame.contentDocument;
+      assert(doc.documentElement.scrollWidth <= doc.documentElement.clientWidth + 1,
+        `width ${width}: document overflows: ${doc.documentElement.scrollWidth} > ${doc.documentElement.clientWidth}`);
+      lines.push(`[INFO] pan hint ${width}px: scrollWidth=${viewport.scrollWidth}, clientWidth=${viewport.clientWidth}, display=${display}`);
+    });
+  }
+
+  async function run() {
+    await withFrame("desktop", "/docs/index.html", 1440, 1000, desktopChecks);
+    await withFrame("deep-link", "/docs/index.html#map-openwebui", 1440, 1000, async frame => {
+      await check("deep link #map-openwebui selects OpenWebUI on load", async () => {
+        assertDetail(frame, "openwebui", {
+          line: "data",
+          kicker: "DATA / Knowledge workspace",
+          status: "DATA \u00b7 OpenWebUI \u00b7 3/5",
+          prev: "\u2190 n8n",
+          next: "Qdrant \u2192"
+        });
+      });
+      await check("deep link keeps station tools chips (default metadata must not overwrite them)", async () => {
+        assertDeep(chips(frame), ["OpenWebUI", "RAG", "Collections", "Retrieval"],
+          "PRODUCT DEFECT: initial #map-openwebui renders default metadata chips instead of station tools");
+      });
+    });
+    await invalidHashChecks("#map-toString");
+    await invalidHashChecks("#map-__proto__");
+    await withFrame("mobile", "/docs/index.html", 390, 900, mobileChecks);
+    await withFrame("narrow", "/docs/index.html", 768, 900, narrowChecks);
+    for (const width of [1240, 1280, 1281, 1440]) {
+      await withFrame(`pan-hint-${width}`, "/docs/index.html", width, 1000,
+        frame => panHintAtWidth(frame, width));
+    }
+  }
+
+  window.addEventListener("error", event => {
+    failures += 1;
+    lines.push(`[FAIL] window error :: ${event.message}`);
+  });
+  window.addEventListener("unhandledrejection", event => {
+    failures += 1;
+    lines.push(`[FAIL] unhandled rejection :: ${event.reason && event.reason.message ? event.reason.message : event.reason}`);
+  });
+
+  run()
+    .catch(error => {
+      failures += 1;
+      lines.push(`[FAIL] harness crashed :: ${error && error.stack ? error.stack : error}`);
+    })
+    .finally(() => {
+      finish();
+    });
+})();
+</script>
+</body>
+</html>

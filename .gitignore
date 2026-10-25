@@ -1,0 +1,3 @@
+node_modules/
+/tests/local_blocklist.txt
+/tests/__pycache__/

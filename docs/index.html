@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23111816'/%3E%3Cpath%20d='M8%2010h16v4H8zm0%208h10v4H8z'%20fill='%23c8ff4d'/%3E%3C/svg%3E">
+<title>Private AI Infrastructure | System Metro</title>
+<meta name="description" content="An interactive system metro for a local-first AI platform. Explore knowledge, agents, automation, security and observability without sensitive implementation details.">
+<link rel="canonical" href="https://xxjackart.github.io/infra-map-public/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Private AI Infrastructure | System Metro">
+<meta property="og:description" content="Explore the capabilities. Inspect the decisions. An interactive system metro for local-first knowledge, agents and operations.">
+<meta property="og:url" content="https://xxjackart.github.io/infra-map-public/">
+<meta property="og:image" content="https://xxjackart.github.io/infra-map-public/social-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Private AI system metro. Data, agency and trust lines connect capability stations, with an external AI boundary and no sensitive implementation details.">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root {
+    --paper: #f2f1ec;
+    --surface: #fbfaf6;
+    --ink: #111816;
+    --muted: #5d6862;
+    --line: #d4d9d1;
+    --blue: #2457ff;
+    --acid: #c8ff4d;
+    --orange: #ff8562;
+    --teal: #50dfc8;
+    --violet: #c2a5ff;
+    --dark: #07110f;
+    --dark-2: #101d19;
+    --dark-line: #2a3b35;
+    --dark-text: #edf5ef;
+    --dark-muted: #a7b7af;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; }
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; }
+  ::selection { background: var(--acid); color: var(--dark); }
+  .skip { position: fixed; top: 12px; left: 12px; z-index: 40; padding: 10px 14px; background: var(--surface); border: 2px solid var(--blue); transform: translateY(-160%); }
+  .skip:focus { transform: none; }
+  .shell { width: min(1440px, calc(100% - 64px)); margin-inline: auto; }
+  .eyebrow, .kicker, .hero-tags, .atlas-toolbar, .atlas-statusbar, .station small, .detail-kicker, .detail-tools, .pattern-no, .stack-label, .public-label {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  .site-header { min-height: 82px; display: flex; align-items: center; justify-content: space-between; gap: 28px; border-bottom: 1px solid var(--line); }
+  .wordmark { display: inline-flex; align-items: center; gap: 12px; font: 700 12px/1.2 "SFMono-Regular", Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; }
+  .wordmark-mark { width: 30px; height: 30px; display: grid; place-content: center; gap: 4px; padding: 7px; border-radius: 8px; background: var(--ink); }
+  .wordmark-mark i { display: block; height: 3px; background: var(--acid); }
+  .wordmark-mark i:last-child { width: 65%; }
+  nav { display: flex; align-items: center; gap: 28px; font-size: 13px; font-weight: 650; }
+  nav a { color: var(--muted); }
+  nav a:hover { color: var(--ink); }
+  .site-header > .repo { padding: 9px 13px; border: 1px solid var(--ink); border-radius: 8px; color: var(--ink); font-size: 13px; font-weight: 650; }
+  .site-header > .repo:hover { background: var(--ink); color: var(--surface); }
+  .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 60px; align-items: end; padding: 56px 0 48px; }
+  .eyebrow, .kicker { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+  .eyebrow::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: var(--blue); }
+  h1 { margin-top: 24px; max-width: 900px; font-size: clamp(56px, 6.7vw, 96px); line-height: .91; letter-spacing: -.055em; font-weight: 780; }
+  h1 span { color: var(--blue); }
+  .lede { max-width: 650px; color: var(--muted); font-size: clamp(17px, 1.55vw, 21px); line-height: 1.5; letter-spacing: -.015em; }
+  .hero-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 23px; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .hero-tags span { padding: 8px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.36); }
+  section { scroll-margin-top: 24px; }
+  .section-heading { display: grid; grid-template-columns: 1fr minmax(260px, 460px); gap: 48px; align-items: end; margin-bottom: 32px; }
+  .section-heading .kicker { margin-bottom: 12px; color: var(--blue); }
+  h2 { font-size: clamp(38px, 4.6vw, 66px); line-height: 1; letter-spacing: -.045em; font-weight: 740; }
+  .section-heading > p { color: var(--muted); font-size: 16px; }
+  .atlas-heading { margin-bottom: 24px; }
+  .atlas-shell { position: relative; overflow: hidden; border: 1px solid #20312b; border-radius: 26px; background: var(--dark); color: var(--dark-text); box-shadow: 0 18px 48px rgba(17,24,22,.12); }
+  .atlas-toolbar { position: relative; z-index: 12; display: flex; justify-content: space-between; align-items: center; gap: 18px; min-height: 58px; padding: 16px 20px; border-bottom: 1px solid var(--dark-line); color: var(--dark-muted); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; }
+  .atlas-instruction { display: flex; align-items: center; gap: 9px; }
+  .atlas-instruction::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 14px rgba(80,223,200,.7); }
+  .atlas-legend { display: flex; flex-wrap: wrap; gap: 14px; }
+  .atlas-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .atlas-legend i { width: 18px; height: 3px; border-radius: 3px; background: currentColor; }
+  .atlas-legend .data { color: var(--teal); }
+  .atlas-legend .agency { color: var(--violet); }
+  .atlas-legend .trust { color: var(--acid); }
+  .atlas-legend .external { color: var(--orange); }
+  .atlas-legend .external i { height: 0; border-top: 2px dashed currentColor; background: none; }
+  .atlas-reset { border: 1px solid var(--dark-line); border-radius: 6px; padding: 8px; background: transparent; color: var(--dark-muted); font: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+  .atlas-reset:hover:not(:disabled) { border-color: var(--teal); color: var(--dark-text); }
+  .atlas-reset:disabled { opacity: .35; cursor: default; }
+  .atlas-statusbar { position: relative; z-index: 25; display: flex; justify-content: space-between; gap: 18px; padding: 9px 20px; border-bottom: 1px solid var(--dark-line); background: rgba(7,17,15,.96); color: var(--dark-muted); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+  #line-status { margin-left: auto; color: var(--teal); font-weight: 700; }
+  .map-pan-hint { display: none; margin-left: 8px; }
+  .atlas-viewport { position: relative; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: #3b5148 var(--dark); }
+  .atlas-canvas { position: relative; width: 1200px; height: 640px; margin-inline: auto; overflow: hidden; background: var(--dark); }
+  .metro-svg { position: absolute; inset: 0; width: 1200px; height: 640px; overflow: visible; }
+  .metro-line { fill: none; stroke-width: 7; stroke-linecap: round; opacity: .86; transition: opacity .22s ease, stroke-width .22s ease, filter .22s ease; }
+  .line-data { stroke: var(--teal); color: var(--teal); }
+  .line-agency { stroke: var(--violet); color: var(--violet); }
+  .line-trust { stroke: var(--acid); color: var(--acid); }
+  .metro-transfer { fill: none; stroke: #9fb3aa; stroke-width: 2; stroke-dasharray: 5 8; opacity: .55; transition: opacity .22s ease; }
+  .metro-external { fill: none; stroke: var(--orange); stroke-width: 3; stroke-dasharray: 9 8; opacity: .8; transition: opacity .22s ease; }
+  .status-lines { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+  .status-lines .data { color: var(--teal); }
+  .status-lines .agency { color: var(--violet); }
+  .status-lines .trust { color: var(--acid); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .noscript-note { padding: 12px 20px; border-top: 1px solid var(--dark-line); color: var(--dark-muted); font-size: 12px; }
+  .release-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .station { position: absolute; z-index: 5; left: var(--x); top: var(--y); width: 184px; min-height: 76px; display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #3a4c45; border-radius: 16px; background: rgba(13,27,23,.97); color: var(--dark-text); text-align: left; cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 10px 26px rgba(0,0,0,.28); transition: opacity .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+  @media (hover: hover) {
+    .station:hover { border-color: var(--station-color); transform: translate(-50%, -50%) scale(1.045); box-shadow: 0 12px 30px rgba(0,0,0,.38), 0 0 22px color-mix(in srgb, var(--station-color) 20%, transparent); }
+  }
+  .station[data-line="data"] { --station-color: var(--teal); }
+  .station[data-line="agency"] { --station-color: var(--violet); }
+  .station[data-line="trust"] { --station-color: var(--acid); }
+  .station[data-line="external"] { --station-color: var(--orange); border-style: dashed; }
+  .station.is-selected { border-color: var(--station-color); box-shadow: 0 0 0 2px var(--station-color), 0 0 28px color-mix(in srgb, var(--station-color) 28%, transparent); }
+  .station-token { flex: none; width: 45px; height: 45px; display: grid; place-items: center; border-radius: 50%; background: #f7faf7; color: #101815; box-shadow: 0 0 0 4px rgba(255,255,255,.06); }
+  .station-token img { display: block; width: 25px; height: 25px; }
+  .station-token .monogram { max-width: 42px; font: 800 11px/1 "SFMono-Regular", Consolas, monospace; letter-spacing: -.03em; text-align: center; }
+  .station-copy { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .station-copy strong { font-size: 14px; line-height: 1.15; letter-spacing: -.015em; }
+  .station-copy small { color: var(--dark-muted); font-size: 10.5px; line-height: 1.2; letter-spacing: .01em; }
+  .atlas-shell.has-focus .station { opacity: .55; }
+  .atlas-shell.has-focus .station small { color: var(--dark-text); }
+  .atlas-shell.has-focus .station:hover, .atlas-shell.has-focus .station:focus-visible { opacity: 1; }
+  .atlas-shell.has-focus .station.is-active-line { opacity: 1; }
+  .atlas-shell.has-focus .metro-line { opacity: .1; }
+  .atlas-shell.has-focus .metro-line.is-active { opacity: 1; stroke-width: 9; filter: drop-shadow(0 0 7px currentColor); }
+  .atlas-shell.has-focus .metro-transfer { opacity: .06; }
+  .atlas-shell.has-focus .metro-external { opacity: .12; }
+  .atlas-shell.has-focus .metro-external.is-active { opacity: 1; }
+  .station-detail { position: relative; z-index: 10; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: 32px; min-height: 168px; padding: 24px; border-top: 1px solid var(--dark-line); background: #0c1815; }
+  .detail-main { display: grid; grid-template-columns: 58px 1fr; gap: 16px; align-items: start; }
+  .detail-icon .station-token { width: 54px; height: 54px; }
+  .detail-icon .station-token img { width: 29px; height: 29px; }
+  .detail-kicker { color: var(--teal); font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+  .detail-main h3 { margin-top: 7px; font-size: 24px; line-height: 1.15; letter-spacing: -.03em; }
+  .detail-main p:last-child { max-width: 62ch; margin-top: 9px; color: var(--dark-muted); font-size: 13px; line-height: 1.6; }
+  .detail-side { display: flex; flex-direction: column; justify-content: space-between; gap: 20px; }
+  .detail-tools { display: flex; flex-wrap: wrap; gap: 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; }
+  .detail-tools span { padding: 6px 8px; border: 1px solid var(--dark-line); border-radius: 6px; color: var(--dark-muted); background: rgba(255,255,255,.02); }
+  .detail-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .detail-actions button { padding: 8px 12px; border: 1px solid var(--dark-line); border-radius: 8px; background: transparent; color: var(--dark-text); font-size: 12px; cursor: pointer; }
+  .detail-actions button:hover:not(:disabled) { border-color: var(--teal); }
+  .detail-actions button:disabled { opacity: .35; cursor: default; }
+  #detail-next { background: var(--teal); border-color: var(--teal); color: #07110f; font-weight: 750; }
+  .patterns { padding-top: 96px; }
+  .pattern-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .pattern-card { display: flex; flex-direction: column; min-height: 290px; padding: 26px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); transition: transform .18s ease, box-shadow .18s ease; }
+  .pattern-card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(17,24,22,.07); }
+  .pattern-no { display: inline-grid; place-items: center; width: 34px; height: 27px; border-radius: 6px; background: var(--ink); color: var(--acid); font-size: 10.5px; font-weight: 700; }
+  .pattern-card h3 { margin-top: 26px; max-width: 320px; font-size: 24px; line-height: 1.12; letter-spacing: -.035em; }
+  .pattern-card > p { margin-top: 14px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: auto; padding-top: 24px; }
+  .card-tags span { padding: 5px 8px; border-radius: 5px; background: #e9ece5; color: #445049; font: 700 10.5px/1.2 "SFMono-Regular", Consolas, monospace; text-transform: uppercase; }
+  .stack { padding-top: 100px; }
+  .stack-list { border-top: 2px solid var(--ink); }
+  .stack-row { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 30px; padding: 28px 0; border-bottom: 1px solid var(--line); }
+  .stack-label { color: var(--blue); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .stack-row h3 { margin-top: 8px; font-size: 18px; line-height: 1.3; letter-spacing: -.025em; }
+  .stack-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .tool { min-width: 0; padding: 12px 13px; border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 8px; background: rgba(251,250,246,.75); font-size: 13px; font-weight: 700; }
+  .tool small { display: block; margin-top: 4px; color: var(--muted); font-family: "SFMono-Regular", Consolas, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .02em; text-transform: uppercase; }
+  .principles { margin-top: 100px; padding: 50px; border-radius: 26px; background: var(--blue); color: white; }
+  .principles-layout { display: grid; grid-template-columns: .8fr 1.2fr; gap: 80px; }
+  .principles .kicker { color: var(--acid); }
+  .principles h2 { margin-top: 16px; }
+  .principles-intro > p:last-child { max-width: 390px; margin-top: 24px; color: #eaf0ff; font-size: 16px; }
+  .principle-list { list-style: none; border-top: 1px solid rgba(255,255,255,.28); }
+  .principle-list li { display: grid; grid-template-columns: 34px 1fr; gap: 15px; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,.28); }
+  .principle-list li > span { color: var(--acid); font: 700 11px/1.6 "SFMono-Regular", Consolas, monospace; }
+  .principle-list h3 { font-size: 17px; }
+  .principle-list p { margin-top: 4px; color: #eaf0ff; font-size: 13px; }
+  .public-note { display: grid; grid-template-columns: 1fr 1fr; gap: 70px; margin-top: 80px; padding: 42px 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); }
+  .public-label { color: var(--blue); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .public-note h2 { margin-top: 13px; font-size: clamp(30px, 3.2vw, 44px); }
+  .public-note > p { align-self: end; max-width: 70ch; color: var(--muted); font-size: 14px; line-height: 1.7; }
+  .site-footer { display: flex; justify-content: space-between; gap: 24px; padding: 32px 0; color: var(--muted); font: 10.5px/1.5 "SFMono-Regular", Consolas, monospace; text-transform: uppercase; letter-spacing: .04em; }
+  .site-footer a { color: var(--ink); font-weight: 700; }
+  @media (max-width: 1120px) {
+    .hero { gap: 40px; }
+    .pattern-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .principles-layout { gap: 44px; }
+    .station-detail { grid-template-columns: 1fr; gap: 20px; }
+    .detail-side { gap: 16px; }
+  }
+  @media (max-width: 860px) {
+    .shell { width: min(100% - 40px, 1440px); }
+    .hero { grid-template-columns: 1fr; padding: 48px 0 42px; gap: 28px; }
+    .section-heading { grid-template-columns: 1fr; gap: 18px; }
+    .stack-row { grid-template-columns: 1fr; gap: 18px; }
+    .principles { padding: 34px; }
+    .principles-layout { grid-template-columns: 1fr; gap: 34px; }
+    .public-note { grid-template-columns: 1fr; gap: 24px; }
+    .atlas-toolbar { align-items: flex-start; flex-wrap: wrap; }
+    .atlas-legend { order: 3; width: 100%; }
+  }
+  @media (max-width: 640px) {
+    .shell { width: min(100% - 28px, 1440px); }
+    .site-header { min-height: 70px; flex-wrap: wrap; padding: 14px 0; gap: 14px; }
+    .wordmark { max-width: 190px; font-size: 10px; }
+    .site-header > nav { order: 3; width: 100%; justify-content: flex-start; gap: 20px; }
+    .site-header > nav a { font-size: 11px; }
+    .site-header > .repo { order: 2; margin-left: auto; font-size: 11px; }
+    .hero { padding: 42px 0 36px; gap: 24px; }
+    h1 { font-size: clamp(50px, 14vw, 70px); line-height: .94; }
+    .lede { font-size: 17px; }
+    .hero-tags { gap: 7px; }
+    .hero-tags span { padding: 7px 8px; font-size: 10.5px; }
+    .section-heading { margin-bottom: 22px; }
+    h2 { font-size: 40px; }
+    .atlas-shell, .principles { border-radius: 18px; }
+    .atlas-toolbar { padding: 14px 16px; }
+    .atlas-instruction { max-width: 230px; }
+    .atlas-statusbar { flex-wrap: wrap; gap: 8px 12px; padding: 10px 14px; font-size: 10.5px; }
+    .status-lines { width: 100%; }
+    #line-status { margin-left: 0; }
+    .map-pan-hint { margin-left: auto; max-width: 145px; text-align: right; }
+    .station-detail { padding: 22px 18px; }
+    .detail-main { grid-template-columns: 46px 1fr; gap: 13px; }
+    .detail-icon .station-token { width: 44px; height: 44px; }
+    .detail-main h3 { font-size: 22px; }
+    .detail-actions { justify-content: flex-start; flex-wrap: wrap; }
+    .patterns, .stack { padding-top: 76px; }
+    .pattern-grid { grid-template-columns: 1fr; }
+    .pattern-card { min-height: 0; }
+    .stack-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .principles { margin-top: 76px; padding: 28px 22px; }
+    .public-note { margin-top: 60px; }
+    .site-footer { flex-direction: column; gap: 10px; }
+  }
+  @page { size: A4 landscape; margin: 10mm; }
+  @media print {
+    *, *::before, *::after { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    body { background: #fff; color: #000; }
+    .site-header nav, .site-header > .repo, .hero-tags, .atlas-toolbar, .atlas-statusbar, .detail-actions, .site-footer a { display: none !important; }
+    .shell { width: 100%; }
+    .hero { display: block; padding: 0 0 24px; }
+    h1, h2, h3, h4, .lede, .section-heading > p, .public-note > p { color: #000 !important; }
+    .atlas-shell { break-inside: avoid; border: 1px solid #000; box-shadow: none; background: #fff; color: #000; }
+    .atlas-viewport { overflow: visible; height: 512px; }
+    .atlas-canvas { background: #fff; transform: scale(.8); transform-origin: top left; }
+    .station { opacity: 1 !important; background: #fff; color: #000; border-color: #444; box-shadow: none; }
+    .station-copy small { color: #333 !important; }
+    .metro-line, .metro-transfer, .metro-external { opacity: 1 !important; filter: none !important; }
+    .station-detail { display: block; background: #fff; color: #000; border-top: 1px solid #000; }
+    .detail-main p:last-child, .detail-tools span { color: #222; }
+    .pattern-card, .tool, .principles { break-inside: avoid; background: #fff; color: #000; }
+    .principles { border: 1px solid #000; }
+    .principles-intro > p:last-child, .principle-list p { color: #222 !important; }
+    .principle-list, .principle-list li { border-color: #999; }
+    .public-note { border-color: #000; }
+    .site-footer { color: #333; }
+    a { text-decoration: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#top">Skip to content</a>
+<div class="shell">
+  <header class="site-header">
+    <a class="wordmark" href="#top" aria-label="Private AI Infrastructure, back to top">
+      <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+      <span>Private AI / Infrastructure</span>
+    </a>
+    <nav aria-label="Page navigation">
+      <a href="#system">System</a>
+      <a href="#patterns">Patterns</a>
+      <a href="#stack">Stack</a>
+      <a href="#principles">Principles</a>
+      <a href="#public-note">Public</a>
+    </nav>
+    <a class="repo" href="https://github.com/xxjackart/infra-map-public">Repository ↗</a>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div>
+        <p class="eyebrow">Public architecture brief / local-first systems</p>
+        <h1 id="hero-title">Private AI.<br><span>System metro.</span></h1>
+      </div>
+      <div>
+        <p class="lede">A self-hosted platform that turns scattered information into reviewable action, using local knowledge, bounded agents and explicit trust boundaries.</p>
+        <div class="hero-tags" role="group" aria-label="Architecture characteristics">
+          <span>Local-first</span>
+          <span>Model-agnostic</span>
+          <span>Human-in-control</span>
+          <span>Security by design</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="system" aria-labelledby="atlas-title">
+      <div class="section-heading atlas-heading">
+        <div>
+          <p class="kicker">01 / Interactive architecture</p>
+          <h2 id="atlas-title">Explore the system metro.</h2>
+        </div>
+        <p>For technical readers: a capability map, not a C4 context or container diagram. Every station is a capability; product names identify implementations, not deployment boundaries. Line order guides reading, not execution. Gray dashed transfers mark logical dependencies, never physical network routes.</p>
+      </div>
+
+      <div class="atlas-shell" id="atlas">
+        <div class="atlas-toolbar">
+          <span class="atlas-instruction">Select a station to inspect it</span>
+          <div class="atlas-legend" role="group" aria-label="Map legend">
+            <span class="data"><i></i>Data / capabilities</span>
+            <span class="agency"><i></i>Agency / decisions</span>
+            <span class="trust"><i></i>Trust / operations</span>
+            <span class="external"><i></i>External / AI boundary</span>
+            <span><i style="height:0;border-top:2px dashed #9fb3aa;background:none"></i>Logical transfer</span>
+          </div>
+          <button class="atlas-reset" id="atlas-reset" type="button" disabled>Reset view</button>
+        </div>
+        <div class="atlas-statusbar">
+          <div class="status-lines" aria-label="Map line names">
+            <span class="data">DATA</span>
+            <span class="agency">AGENCY</span>
+            <span class="trust">TRUST</span>
+          </div>
+          <span id="line-status">All lines / select a station</span>
+          <span class="map-pan-hint">Scroll or swipe to explore</span>
+        </div>
+        <div class="atlas-viewport" id="atlas-viewport" tabindex="0" role="region" aria-label="Scrollable system metro map">
+          <div class="atlas-canvas">
+            <svg class="metro-svg" viewBox="0 0 1200 640" aria-hidden="true">
+              <path class="metro-line line-data" d="M40 170 H1160" />
+              <path class="metro-line line-agency" d="M40 360 H1160" />
+              <path class="metro-line line-trust" d="M40 550 H1160" />
+              <path class="metro-transfer" d="M390 170 V550" />
+              <path class="metro-transfer" d="M630 170 V550" />
+              <path class="metro-external" d="M630 245 C700 80 930 20 1092 55" />
+            </svg>
+            <section class="sr-only" aria-label="Map relationships">
+              <h3>Capability relationships</h3>
+              <p>DATA groups knowledge capabilities. AGENCY follows human intent to controlled outcomes. TRUST groups operating responsibilities; station order is not an execution sequence.</p>
+              <ul>
+                <li>n8n makes workflows available to Open Code through MCP.</li>
+                <li>Caddy terminates controlled routes for those APIs.</li>
+                <li>OpenWebUI exposes knowledge retrieval through MCP.</li>
+                <li>Infisical supplies credentials when MCP tools start.</li>
+                <li>External model APIs process inference and document embeddings under data-classification policy.</li>
+              </ul>
+            </section>
+            <button class="station" style="--x:150px;--y:170px" data-station="sources" data-line="data" data-position="1" data-detail="Inputs and triggers" data-description="Feeds, video, documents, voice and email enter through explicit ingestion paths. Raw input is treated as material for a pipeline, not as automatic truth." data-tools="RSS|Video|Documents|Voice|Email" type="button" aria-pressed="false">
+              <span class="station-token"><span class="monogram">IN</span></span>
+              <span class="station-copy"><strong>Sources</strong><small>feeds · docs · voice</small></span>
+            </button>
+            <button class="station" style="--x:390px;--y:170px" data-station="n8n" data-line="data" data-position="2" data-detail="Workflows and ETL" data-description="Workflows ingest, normalise, classify, deduplicate and route content. Open Code controls selected workflows through MCP. Automation stays observable and idempotent instead of becoming a chain of invisible scripts." data-tools="n8n|ETL|Routing|Idempotency" type="button" aria-pressed="false">
+              <span class="station-token"><img src="icons/n8n.svg" alt=""></span>
+              <span class="station-copy"><strong>n8n</strong><small>workflow + ETL</small></span>
+            </button>
+            <button class="station" style="--x:630px;--y:170px" data-station="openwebui" data-line="data" data-position="3" data-detail="Knowledge workspace" data-description="Curated collections give people and agents a shared retrieval interface. MCP exposes this retrieval to agents. RAG supplies context while durable systems of record remain authoritative." data-tools="OpenWebUI|RAG|Collections|Retrieval" type="button" aria-pressed="false">
+              <span class="station-token"><span class="monogram">OW</span></span>
+              <span class="station-copy"><strong>OpenWebUI</strong><small>knowledge + RAG</small></span>
+            </button>
+            <button class="station" style="--x:870px;--y:170px" data-station="qdrant" data-line="data" data-position="4" data-detail="Derived semantic index" data-description="Embeddings and vector search retrieve relevant context by meaning. This derived index supports reasoning without replacing source documents or structured records." data-tools="Qdrant|Embeddings|Vector search" type="button" aria-pressed="false">
+              <span class="station-token"><img src="icons/qdrant.svg" alt=""></span>
+              <span class="station-copy"><strong>Qdrant</strong><small>vector retrieval</small></span>
+            </button>
+            <button class="station" style="--x:1092px;--y:170px" data-station="records" data-line="data" data-position="5" data-detail="Systems of record" data-description="Tasks, decisions, structured data and technical notes remain readable and portable outside any model provider." data-tools="Redmine|PostgreSQL|EchoesVault" type="button" aria-pressed="false">
+              <span class="station-token"><img src="icons/redmine.svg" alt=""></span>
+              <span class="station-copy"><strong>Records</strong><small>durable memory</small></span>
+            </button>
+
+            <button class="station" style="--x:150px;--y:360px" data-station="human" data-line="agency" data-position="1" data-detail="Questions and approvals" data-description="People frame the work, inspect evidence and authorise consequential actions. The system is designed around reviewable decisions, not unattended autonomy." data-tools="Questions|Reviews|Approvals" type="button" aria-pressed="false">
+              <span class="station-token"><span class="monogram">YOU</span></span>
+              <span class="station-copy"><strong>Human</strong><small>intent + approval</small></span>
+            </button>
+            <button class="station" style="--x:390px;--y:360px" data-station="opencode" data-line="agency" data-position="2" data-detail="Agent orchestration" data-description="The agent hub decomposes work, selects tools and integrates results. Caddy terminates controlled routes to remote MCP tools. Local inference, speech and metasearch remain interchangeable capabilities around the hub." data-tools="Open Code|LM Studio|Superwhisper|SearXNG" type="button" aria-pressed="false">
+              <span class="station-token"><img src="icons/opencode.svg" alt=""></span>
+              <span class="station-copy"><strong>Open Code</strong><small>agent hub</small></span>
+            </button>
+            <button class="station" style="--x:630px;--y:360px" data-station="mcp" data-line="agency" data-position="3" data-detail="Scoped tool access" data-description="Agents read real system state through dedicated APIs instead of guessing from stale context. Infisical supplies credentials when scoped tools start. Tool scope and action level follow least privilege." data-tools="MCP|Scoped APIs|Chrome DevTools" type="button" aria-pressed="false">
+              <span class="station-token"><span class="monogram">MCP</span></span>
+              <span class="station-copy"><strong>MCP</strong><small>scoped tools</small></span>
+            </button>
+            <button class="station" style="--x:870px;--y:360px" data-station="decisions" data-line="agency" data-position="4" data-detail="Review before impact" data-description="Recommendations arrive with sources, assumptions and an approval path. Automation level follows scope, reversibility and consequence." data-tools="HITL|Evidence|Approvals" type="button" aria-pressed="false">
+              <span class="station-token"><span class="monogram">HITL</span></span>
+              <span class="station-copy"><strong>Decisions</strong><small>review + approval</small></span>
+            </button>
+            <button class="station" style="--x:1092px;--y:360px" data-station="outcomes" data-line="agency" data-position="5" data-detail="Applied automation" data-description="Processed events become useful action across home automation, media, alerts and personal learning. The platform is measured by daily use, not by demo complexity." data-tools="Home Assistant|Music Assistant|Audiobookshelf|Anki" type="button" aria-pressed="false">
+              <span class="station-token"><img src="icons/home-assistant.svg" alt=""></span>
+              <span class="station-copy"><strong>Outcomes</strong><small>home · media · learning</small></span>
+            </button>
+
+            <button class="station" style="--x:150px;--y:550px" data-station="network" data-line="trust" data-position="1" data-detail="Identity before connectivity" data-description="Identity-based access, local DNS filtering and recursive resolution create a private connectivity layer. There is no public inbound control plane." data-tools="Tailscale|Pi-hole|Unbound" type="button" aria-pressed="false">
+              <span class="station-token"><img src="icons/tailscale.svg" alt=""></span>
+              <span class="station-copy"><strong>Network</strong><small>identity + DNS</small></span>
+            </button>
+            <button class="station" style="--x:390px;--y:550px" data-station="caddy" data-line="trust" data-position="2" data-detail="Controlled gateway" data-description="A controlled reverse proxy terminates approved service routes. Exposure is deliberate and bounded instead of being a side effect of deployment." data-tools="Caddy|TLS|Reverse proxy" type="button" aria-pressed="false">
+              <span class="station-token"><img src="icons/caddy.svg" alt=""></span>
+              <span class="station-copy"><strong>Caddy</strong><small>controlled edge</small></span>
+            </button>
+            <button class="station" style="--x:630px;--y:550px" data-station="infisical" data-line="trust" data-position="3" data-detail="Secrets management" data-description="Scoped credentials are injected at launch and centrally managed. Secrets stay outside source code, public documents and deployment diagrams." data-tools="Infisical|Scoped secrets|Rotation" type="button" aria-pressed="false">
+              <span class="station-token"><span class="monogram">IS</span></span>
+              <span class="station-copy"><strong>Infisical</strong><small>secrets</small></span>
+            </button>
+            <button class="station" style="--x:870px;--y:550px" data-station="recovery" data-line="trust" data-position="4" data-detail="Explicit operating rules" data-description="Operating standard: sensitive backups must be encrypted before off-site transfer. Recovery procedures and restore tests are requirements, not claims of universal coverage." data-tools="Encryption|Off-site copies|Restore tests" type="button" aria-pressed="false">
+              <span class="station-token"><span class="monogram">DR</span></span>
+              <span class="station-copy"><strong>Recovery</strong><small>backup + restore</small></span>
+            </button>
+            <button class="station" style="--x:1092px;--y:550px" data-station="observability" data-line="trust" data-position="5" data-detail="Runtime and operational visibility" data-description="Metrics, logs and independent uptime probes make service and pipeline failures visible. Container runtime is an operational concern, not just packaging." data-tools="Grafana|Prometheus|Loki|Uptime Kuma|Docker" type="button" aria-pressed="false">
+              <span class="station-token"><img src="icons/grafana.svg" alt=""></span>
+              <span class="station-copy"><strong>Observability</strong><small>metrics · logs · uptime</small></span>
+            </button>
+            <button class="station" style="--x:1092px;--y:55px" data-station="models" data-line="external" data-position="1" data-detail="Explicit locality exception" data-description="External inference and document embeddings are explicit exceptions to local processing. Data classification decides what may cross this boundary." data-tools="Model APIs|Document embeddings|Data classification" type="button" aria-pressed="false">
+              <span class="station-token"><span class="monogram">API</span></span>
+              <span class="station-copy"><strong>Model APIs</strong><small>embeddings + inference</small></span>
+            </button>
+          </div>
+        </div>
+
+        <section class="station-detail" id="station-detail" aria-label="Station details">
+          <div class="detail-main">
+            <div class="detail-icon" id="detail-icon"><span class="station-token"><span class="monogram">MAP</span></span></div>
+            <div aria-live="polite">
+              <p class="detail-kicker" id="detail-kicker">Interactive map guide</p>
+              <h3 id="detail-title">Choose a station.</h3>
+              <p id="detail-description">Inspect a capability, see its tools and follow the system with Previous and Next. Your selection also gets a shareable map link.</p>
+            </div>
+          </div>
+          <div class="detail-side">
+            <div class="detail-tools" id="detail-tools"></div>
+            <div class="detail-actions">
+              <button id="detail-prev" type="button" disabled>← Previous</button>
+              <button id="detail-next" type="button" disabled>Next station →</button>
+            </div>
+          </div>
+        </section>
+        <noscript><p class="noscript-note">Interactive selection requires JavaScript. The station labels and the full technology index below remain readable.</p></noscript>
+      </div>
+    </section>
+
+    <section class="patterns" id="patterns" aria-labelledby="patterns-title">
+      <div class="section-heading">
+        <div>
+          <p class="kicker">02 / Engineering patterns</p>
+          <h2 id="patterns-title">Engineering patterns behind the map.</h2>
+        </div>
+        <p>The important part is not the logo collection. It is the set of constraints that keeps the system understandable, portable and operable.</p>
+      </div>
+      <div class="pattern-grid">
+        <article class="pattern-card">
+          <span class="pattern-no">01</span>
+          <h3>Local-first. External by exception.</h3>
+          <p>Systems of record and daily workflows remain under direct control. External models and utilities are replaceable interfaces, not the foundation.</p>
+          <div class="card-tags"><span>Self-hosted</span><span>Docker</span><span>Open data</span></div>
+        </article>
+        <article class="pattern-card">
+          <span class="pattern-no">02</span>
+          <h3>Agentic, but bounded.</h3>
+          <p>Agents use explicit tools with narrow scopes. Read, recommend and execute are different permission levels, with approval matched to impact.</p>
+          <div class="card-tags"><span>MCP</span><span>Least privilege</span><span>HITL</span></div>
+        </article>
+        <article class="pattern-card">
+          <span class="pattern-no">03</span>
+          <h3>Knowledge outlives the model.</h3>
+          <p>Durable documents, structured records and curated retrieval stay useful when models change. RAG adds context, not another source of truth.</p>
+          <div class="card-tags"><span>RAG</span><span>Redmine</span><span>Markdown</span></div>
+        </article>
+        <article class="pattern-card">
+          <span class="pattern-no">04</span>
+          <h3>Failure domains stay separate.</h3>
+          <p>Local automation, DNS and independent uptime checks continue when another operating domain is unavailable. Resilience is functional, not cosmetic.</p>
+          <div class="card-tags"><span>Multi-site</span><span>DNS</span><span>Isolation</span></div>
+        </article>
+        <article class="pattern-card">
+          <span class="pattern-no">05</span>
+          <h3>Operations must be visible.</h3>
+          <p>Metrics, logs and uptime checks cover selected services and pipelines. Dashboards support diagnosis; alerts trigger an operational response.</p>
+          <div class="card-tags"><span>Grafana</span><span>Loki</span><span>Uptime Kuma</span></div>
+        </article>
+        <article class="pattern-card">
+          <span class="pattern-no">06</span>
+          <h3>Recovery has explicit rules.</h3>
+          <p>Operating standard: sensitive backups must be encrypted before off-site transfer. Recovery procedures and restore tests are part of the same standard.</p>
+          <div class="card-tags"><span>Policy</span><span>Encryption</span><span>Restore tests</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="stack" id="stack" aria-labelledby="stack-title">
+      <div class="section-heading">
+        <div>
+          <p class="kicker">03 / Technology index</p>
+          <h2 id="stack-title">Technology index by responsibility.</h2>
+        </div>
+        <p>Grouped by responsibility, deliberately detached from hosts and network locations. No versions, instance names or deployment identifiers.</p>
+      </div>
+      <div class="stack-list">
+        <section class="stack-row" aria-labelledby="stack-ai">
+          <div><span class="stack-label">AI + agents</span><h3 id="stack-ai">Reasoning over owned context.</h3></div>
+          <div class="stack-items">
+            <span class="tool">Open Code<small>Agent orchestration</small></span>
+            <span class="tool">MCP<small>Tool interface</small></span>
+            <span class="tool">OpenWebUI<small>RAG workspace</small></span>
+            <span class="tool">Qdrant<small>Vector retrieval</small></span>
+            <span class="tool">LM Studio<small>Local inference</small></span>
+            <span class="tool">SearXNG<small>Private metasearch</small></span>
+            <span class="tool">Superwhisper<small>Speech to text</small></span>
+          </div>
+        </section>
+        <section class="stack-row" aria-labelledby="stack-data">
+          <div><span class="stack-label">Automation + knowledge</span><h3 id="stack-data">Durable work and data.</h3></div>
+          <div class="stack-items">
+            <span class="tool">n8n<small>Workflows + ETL</small></span>
+            <span class="tool">Redmine<small>Tasks + wiki</small></span>
+            <span class="tool">PostgreSQL<small>Structured data</small></span>
+            <span class="tool">EchoesVault<small>Technical memory</small></span>
+            <span class="tool">Anki<small>Spaced learning</small></span>
+          </div>
+        </section>
+        <section class="stack-row" aria-labelledby="stack-security">
+          <div><span class="stack-label">Access + security</span><h3 id="stack-security">Identity before connectivity.</h3></div>
+          <div class="stack-items">
+            <span class="tool">Tailscale<small>Identity mesh</small></span>
+            <span class="tool">Caddy<small>Controlled gateway</small></span>
+            <span class="tool">Infisical<small>Secrets management</small></span>
+            <span class="tool">Pi-hole<small>DNS filtering</small></span>
+            <span class="tool">Unbound<small>Recursive DNSSEC</small></span>
+          </div>
+        </section>
+        <section class="stack-row" aria-labelledby="stack-ops">
+          <div><span class="stack-label">Observability + runtime</span><h3 id="stack-ops">Operate what can be seen.</h3></div>
+          <div class="stack-items">
+            <span class="tool">Grafana<small>Dashboards</small></span>
+            <span class="tool">Prometheus<small>Metrics</small></span>
+            <span class="tool">Loki<small>Log aggregation</small></span>
+            <span class="tool">Uptime Kuma<small>Independent probes</small></span>
+            <span class="tool">Docker<small>Service runtime</small></span>
+          </div>
+        </section>
+        <section class="stack-row" aria-labelledby="stack-home">
+          <div><span class="stack-label">Home + media</span><h3 id="stack-home">Infrastructure in daily use.</h3></div>
+          <div class="stack-items">
+            <span class="tool">Home Assistant<small>Local automation</small></span>
+            <span class="tool">Music Assistant<small>Audio orchestration</small></span>
+            <span class="tool">Audiobookshelf<small>Personal media</small></span>
+          </div>
+        </section>
+        <section class="stack-row" aria-labelledby="stack-external">
+          <div><span class="stack-label">External interfaces</span><h3 id="stack-external">Bounded by policy.</h3></div>
+          <div class="stack-items">
+            <span class="tool">Model APIs<small>Replaceable inference</small></span>
+            <span class="tool">Content sources<small>Explicit ingestion</small></span>
+            <span class="tool">E2E messaging<small>Private interaction</small></span>
+            <span class="tool">Cloud utilities<small>Limited exceptions</small></span>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="principles" id="principles" aria-labelledby="principles-title">
+      <div class="principles-layout">
+        <div class="principles-intro">
+          <p class="kicker">04 / Operating principles</p>
+          <h2 id="principles-title">Operating principles for control and recovery.</h2>
+          <p>Good infrastructure is not the part that impresses during a demo. It is the part that remains understandable during change and failure.</p>
+        </div>
+        <ol class="principle-list">
+          <li><span>01</span><div><h3>Data before models.</h3><p>Models are interchangeable. Knowledge, tools and policies remain stable.</p></div></li>
+          <li><span>02</span><div><h3>Tools before guesses.</h3><p>Agents read authoritative state through APIs instead of relying on assumed context.</p></div></li>
+          <li><span>03</span><div><h3>Approval before impact.</h3><p>Automation level follows scope, reversibility and consequence.</p></div></li>
+          <li><span>04</span><div><h3>Failures must be visible.</h3><p>Monitoring and recovery are designed together with the service.</p></div></li>
+          <li><span>05</span><div><h3>Public documentation is scoped by a threat model.</h3><p>Share the architecture and the reasoning. Keep the targets private.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="public-note" id="public-note" aria-labelledby="public-title">
+      <div>
+        <p class="public-label">Public by design</p>
+        <h2 id="public-title">Public architecture.<br>Private implementation.</h2>
+      </div>
+      <p>This brief deliberately omits addresses, domains, hostnames, physical locations, ports, software versions, infrastructure usernames, exact data volumes, live health data and service-to-host mappings. The value is in the patterns and engineering decisions, not in publishing an attack surface.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Private AI Infrastructure / System metro</span>
+    <span class="release-meta">
+      <span>Owner: <a href="https://github.com/xxjackart">xxjackart</a></span>
+      <span>Version: v6.2</span>
+      <span>Reviewed: <time datetime="2026-10-25">2026-10-25</time></span>
+      <span>No tracking / no external runtime dependencies</span>
+    </span>
+    <span class="release-meta">
+      <a href="https://github.com/xxjackart/infra-map-public">Repository ↗</a>
+      <a href="https://github.com/xxjackart/infra-map-public/blob/main/QA.md">QA + sources ↗</a>
+    </span>
+  </footer>
+</div>
+
+<script src="map.js"></script>
+</body>
+</html>
